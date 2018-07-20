@@ -76,10 +76,11 @@ public class ImageUtil {
 
     }
 
-    public static Bitmap setBitmapSize(Bitmap bitmap, int newWidth, int newHeight) {
+    public static Bitmap setBitmapSize(Bitmap bitmap, int newHeight) {
         int width = bitmap.getWidth();
         int height = bitmap.getHeight();
-        float scaleWidth = ((float) newWidth) / width;
+        float newWidth = ((float)newHeight/height)*width;
+        float scaleWidth = (newWidth) / width;
         float scaleHeight = ((float) newHeight) / height;
         Matrix matrix = new Matrix();
         matrix.postScale(scaleWidth, scaleHeight);
