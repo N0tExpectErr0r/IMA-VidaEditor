@@ -5,24 +5,26 @@ import static android.graphics.Color.rgb;
 import android.graphics.Bitmap;
 import android.graphics.BitmapFactory;
 import android.os.Bundle;
+import android.support.design.widget.FloatingActionButton;
 import android.support.v7.app.AppCompatActivity;
+import android.view.View;
+import android.view.View.OnClickListener;
 import android.widget.ImageView;
 import android.widget.SeekBar;
 import android.widget.TextView;
+import java.util.Date;
 
 public class MainActivity extends AppCompatActivity implements SeekBar.OnSeekBarChangeListener {
 
     private Bitmap mOriBitmap;
-
-    private int red;
-    private int green;
-    private int blue;
-
     private ImageView mIvVida;
-
     private TextView mTvRed;
     private TextView mTvGreen;
     private TextView mTvBlue;
+    private FloatingActionButton mFabSave;
+    private int red = 0;
+    private int green = 211;
+    private int blue = 254;
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
@@ -37,14 +39,12 @@ public class MainActivity extends AppCompatActivity implements SeekBar.OnSeekBar
         mTvRed = findViewById(R.id.tv_red);
         mTvGreen = findViewById(R.id.tv_green);
         mTvBlue = findViewById(R.id.tv_blue);
+        mFabSave = findViewById(R.id.fab_save);
 
         sbRed.setOnSeekBarChangeListener(this);
         sbGreen.setOnSeekBarChangeListener(this);
         sbBlue.setOnSeekBarChangeListener(this);
 
-        red = 0;
-        green = 211;
-        blue = 254;
         //ImageView初始化完成后，加载图片
         mIvVida.post(new Runnable() {
             @Override
@@ -53,6 +53,17 @@ public class MainActivity extends AppCompatActivity implements SeekBar.OnSeekBar
                 mOriBitmap = ImageUtil.setBitmapSize(bitmap,mIvVida.getMeasuredWidth(),mIvVida.getMeasuredHeight());
                 int color = rgb(red, green, blue);
                 mIvVida.setImageBitmap(ImageUtil.handleBitmapColor(mOriBitmap, color));
+            }
+        });
+
+        mFabSave.setOnClickListener(new OnClickListener() {
+            @Override
+            public void onClick(View v) {
+                Bitmap bitmap = BitmapFactory.decodeResource(getResources(), R.drawable.vida);
+                int color = rgb(red, green, blue);
+                Bitmap saveBitmap = ImageUtil.handleBitmapColor(bitmap,color);
+                Date date = new Date();
+                ImageUtil.saveBitmap(MainActivity.this,saveBitmap,"vida_"+date.getTime()+".png","/vida/");
             }
         });
     }
