@@ -1,6 +1,7 @@
 package com.ima_vida.vidaeditor;
 
 import android.content.Context;
+import android.content.Intent;
 import android.graphics.Bitmap;
 import android.graphics.Bitmap.CompressFormat;
 import android.graphics.Canvas;
@@ -8,6 +9,8 @@ import android.graphics.Matrix;
 import android.graphics.Paint;
 import android.graphics.PorterDuff;
 import android.graphics.PorterDuffColorFilter;
+import android.media.MediaScannerConnection;
+import android.net.Uri;
 import android.os.Environment;
 import android.provider.MediaStore;
 import android.util.Log;
@@ -25,6 +28,7 @@ import java.io.IOException;
  */
 public class ImageUtil {
 
+    private static MediaScannerConnection sMediaScannerConnection;
 
     public static Bitmap handleBitmapColor(Bitmap inBitmap, int tintColor) {
         if (inBitmap == null) {
@@ -38,34 +42,39 @@ public class ImageUtil {
         return outBitmap;
     }
 
-    public static void saveBitmap(final Context context, Bitmap bitmap, String fileName, String path) {
-        String subFloder = Environment.getExternalStorageDirectory().getPath() + path;
-        File floder = new File(subFloder);
-        if (!floder.exists()) {
-            floder.mkdirs();
-        }
-        File myCaptureFile = new File(subFloder, fileName);
-        if (!myCaptureFile.exists()) {
-            try {
-                myCaptureFile.createNewFile();
-            } catch (IOException e) {
-                e.printStackTrace();
-                Log.e("saveBitmap: ", e.getMessage());
-            }
-        }
-        try {
-            BufferedOutputStream bos = new BufferedOutputStream(new FileOutputStream(myCaptureFile));
-            bitmap.compress(CompressFormat.PNG, 100, bos);
-            bos.flush();
-            bos.close();
-            Toast.makeText(context, "成功将图片保存至" + subFloder, Toast.LENGTH_SHORT).show();
-            MediaStore.Images.Media.insertImage(context.getContentResolver(),
-                    myCaptureFile.getPath(), fileName, "IMA协会Logo");
-        } catch (IOException e) {
-            e.printStackTrace();
-        }
-    }
+    public static void saveBitmap(final Bitmap bitmap, final String fileName,
+            final PictureSaveCallBack callBack) {
+        new Thread(new Runnable() {
+            @Override
+            public void run() {
+                String subFloder = Environment.getExternalStorageDirectory().getPath() + "/vida/";
+                File floder = new File(subFloder);
+                if (!floder.exists()) {
+                    floder.mkdirs();
+                }
+                File myCaptureFile = new File(subFloder, fileName);
+                if (!myCaptureFile.exists()) {
+                    try {
+                        myCaptureFile.createNewFile();
+                    } catch (IOException e) {
+                        e.printStackTrace();
+                        Log.e("saveBitmap: ", e.getMessage());
+                    }
+                }
+                try {
+                    BufferedOutputStream bos = new BufferedOutputStream(new FileOutputStream(myCaptureFile));
+                    bitmap.compress(CompressFormat.PNG, 80, bos);
+                    bos.flush();
+                    bos.close();
 
+                    callBack.onSaved(subFloder);
+                } catch (IOException e) {
+                    e.printStackTrace();
+                }
+            }
+        }).start();
+
+    }
 
     public static Bitmap setBitmapSize(Bitmap bitmap, int newWidth, int newHeight) {
         int width = bitmap.getWidth();
