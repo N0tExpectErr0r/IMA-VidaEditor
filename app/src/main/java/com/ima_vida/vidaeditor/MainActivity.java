@@ -1,25 +1,23 @@
 package com.ima_vida.vidaeditor;
 
-import static android.graphics.Color.GRAY;
 import static android.graphics.Color.rgb;
 
+import android.app.Activity;
 import android.content.DialogInterface;
 import android.content.Intent;
+import android.content.pm.PackageManager;
 import android.graphics.Bitmap;
 import android.graphics.BitmapFactory;
 import android.net.Uri;
 import android.os.Bundle;
-import android.os.Looper;
-import android.support.design.widget.FloatingActionButton;
+import android.support.annotation.NonNull;
+import android.support.v4.app.ActivityCompat;
 import android.support.v7.app.ActionBar;
-import android.support.v7.app.AlertDialog;
 import android.support.v7.app.AlertDialog.Builder;
 import android.support.v7.app.AppCompatActivity;
 import android.support.v7.widget.Toolbar;
 import android.view.Menu;
 import android.view.MenuItem;
-import android.view.View;
-import android.view.View.OnClickListener;
 import android.widget.ImageView;
 import android.widget.SeekBar;
 import android.widget.TextView;
@@ -37,6 +35,11 @@ public class MainActivity extends AppCompatActivity implements SeekBar.OnSeekBar
     private int red = 0;
     private int green = 211;
     private int blue = 254;
+
+    private static final int REQUEST_EXTERNAL_STORAGE = 1;
+    private static String[] PERMISSIONS_STORAGE = {
+            "android.permission.READ_EXTERNAL_STORAGE",
+            "android.permission.WRITE_EXTERNAL_STORAGE"};
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
@@ -69,41 +72,51 @@ public class MainActivity extends AppCompatActivity implements SeekBar.OnSeekBar
             }
         });
 
+        //申请读写文件权限
+        verifyStoragePermissions(this);
 
     }
 
-    private void savePicture(){
-        if (!canSave) return;
+    /**
+     * 保存图片
+     */
+    private void savePicture() {
+        if (!canSave) {
+            return;
+        }
         canSave = false;
         int color = rgb(red, green, blue);
         Bitmap saveBitmap = ImageUtil.handleBitmapColor(mOriBitmap, color);
         Date date = new Date();
         ImageUtil.saveBitmap(saveBitmap, "vida_" + date.getTime() + ".png",
-            new PictureSaveCallBack() {
-                @Override
-                public void onSaved(final String path) {
-                    runOnUiThread(new Runnable() {
-                        @Override
-                        public void run() {
-                            Toast.makeText(MainActivity.this, "图片已成功保存至" + path,
-                                    Toast.LENGTH_SHORT).show();
-                            canSave = true;
-                        }
-                    });
+                new PictureSaveCallBack() {
+                    @Override
+                    public void onSaved(final String path) {
+                        runOnUiThread(new Runnable() {
+                            @Override
+                            public void run() {
+                                Toast.makeText(MainActivity.this, "图片已成功保存至" + path,
+                                        Toast.LENGTH_SHORT).show();
+                                canSave = true;
+                            }
+                        });
 
-                }
-            });
+                    }
+                });
     }
 
     @Override
     public boolean onCreateOptionsMenu(Menu menu) {
-        getMenuInflater().inflate(R.menu.menu_toolbar,menu);
+        getMenuInflater().inflate(R.menu.menu_toolbar, menu);
         return true;
     }
 
+    /**
+     * 点击Toolbar菜单监听
+     */
     @Override
     public boolean onOptionsItemSelected(MenuItem item) {
-        switch (item.getItemId()){
+        switch (item.getItemId()) {
             case R.id.ic_save:
                 savePicture();
                 break;
@@ -121,14 +134,14 @@ public class MainActivity extends AppCompatActivity implements SeekBar.OnSeekBar
                                 String key = "rauaMTu4_vQKVaoFZ-_Be5Xv0dglOg91";
                                 String uriStr = "mqqopensdkapi://bizAgent/qm/qr?url=http%3A%2F%2Fqm.qq.com%"
                                         + "2Fcgi-bin%2Fqm%2Fqr%3Ffrom%3Dapp%26p%3Dandroid%26k%3D"
-                                        +key;
+                                        + key;
                                 Intent intent = new Intent();
                                 intent.setData(Uri.parse(uriStr));
                                 try {
                                     startActivity(intent);
                                 } catch (Exception e) {
-                                   Toast.makeText(MainActivity.this, "未安装手机QQ或安装的版本不支持",
-                                           Toast.LENGTH_SHORT).show();
+                                    Toast.makeText(MainActivity.this, "未安装手机QQ或安装的版本不支持",
+                                            Toast.LENGTH_SHORT).show();
                                 }
                             }
                         })
@@ -139,6 +152,9 @@ public class MainActivity extends AppCompatActivity implements SeekBar.OnSeekBar
         return true;
     }
 
+    /**
+     * 初始化Toolbar
+     */
     private void initToolbar(CharSequence title) {
         Toolbar toolbar = findViewById(R.id.toolbar);
         setSupportActionBar(toolbar);
@@ -148,6 +164,9 @@ public class MainActivity extends AppCompatActivity implements SeekBar.OnSeekBar
         actionBar.setDisplayHomeAsUpEnabled(true);
     }
 
+    /**
+     * SeekBar滑动监听
+     */
     @Override
     public void onProgressChanged(SeekBar seekBar, int progress, boolean fromUser) {
         switch (seekBar.getId()) {
@@ -176,5 +195,35 @@ public class MainActivity extends AppCompatActivity implements SeekBar.OnSeekBar
 
     @Override
     public void onStopTrackingTouch(SeekBar seekBar) {
+    }
+
+    /**
+     * 动态申请读写文件权限
+     */
+    public void verifyStoragePermissions(Activity activity) {
+
+        try {
+            //检测是否有写的权限
+            int permission = ActivityCompat.checkSelfPermission(activity,
+                    "android.permission.WRITE_EXTERNAL_STORAGE");
+            if (permission != PackageManager.PERMISSION_GRANTED) {
+                // 没有写的权限，去申请写的权限，会弹出对话框
+                ActivityCompat.requestPermissions(activity, PERMISSIONS_STORAGE, REQUEST_EXTERNAL_STORAGE);
+            }
+        } catch (Exception e) {
+            e.printStackTrace();
+        }
+    }
+
+    @Override
+    public void onRequestPermissionsResult(int requestCode, @NonNull String[] permissions,
+            @NonNull int[] grantResults) {
+        for (int i = 0; i < permissions.length; i++) {
+            if (grantResults[i] == PackageManager.PERMISSION_DENIED) {
+                Toast.makeText(this,
+                        "应用需要" + permissions[i] + "权限才可正常运行", Toast.LENGTH_SHORT).show();
+                finish();
+            }
+        }
     }
 }
