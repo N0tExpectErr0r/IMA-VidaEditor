@@ -32,7 +32,7 @@
         android:layout_centerHorizontal="true"
         android:text="纯色蛋"
         android:textColor="#f0f0f0"
-        android:background="@color/colorPrimaryDarkg"/>
+        android:background="@color/colorPrimaryDark"/>
     <Button
         android:id="@+id/btn_pic"
         android:layout_width="match_parent"
