@@ -9,6 +9,7 @@ import android.graphics.Bitmap;
 import android.graphics.Bitmap.CompressFormat;
 import android.graphics.Bitmap.Config;
 import android.graphics.Canvas;
+import android.graphics.Color;
 import android.graphics.Matrix;
 import android.graphics.Paint;
 import android.graphics.PorterDuff;
@@ -61,7 +62,7 @@ public class ImageUtil {
      * @param callBack 得到图片后的callback
      */
     public static void saveBitmap(final Bitmap bitmap, final String fileName,
-            final PictureSaveCallBack callBack) {
+            final PictureSaveCallBack callBack, final CompressFormat type) {
         new Thread(new Runnable() {
             @Override
             public void run() {
@@ -81,11 +82,11 @@ public class ImageUtil {
                 }
                 try {
                     BufferedOutputStream bos = new BufferedOutputStream(new FileOutputStream(myCaptureFile));
-                    bitmap.compress(CompressFormat.PNG, 80, bos);
+                    bitmap.compress(type, 100, bos);
                     bos.flush();
                     bos.close();
 
-                    callBack.onSaved(subFloder);
+                    callBack.onSaved(myCaptureFile);
                 } catch (IOException e) {
                     e.printStackTrace();
                 }
@@ -93,6 +94,28 @@ public class ImageUtil {
         }).start();
 
     }
+
+    /**
+     * 以文件名保存图片为指定格式
+     * @param bitmap 图片
+     * @param fileName 文件名
+     * @param callBack 得到图片后的callback
+     * @param type 保存的类型
+     */
+    public static void saveBitmapToGallery(final Bitmap bitmap, final String fileName,
+            final PictureSaveCallBack callBack,CompressFormat type) {
+        if (type == CompressFormat.JPEG) {
+            Bitmap outBitmap = Bitmap.createBitmap(bitmap.getWidth(), bitmap.getHeight(), Config.ARGB_8888);
+            Canvas canvas = new Canvas(outBitmap);
+            canvas.drawColor(Color.WHITE);
+            Paint paint = new Paint(Paint.ANTI_ALIAS_FLAG);
+            canvas.drawBitmap(bitmap, 0, 0, paint);
+            saveBitmap(outBitmap, fileName, callBack, CompressFormat.JPEG);
+        }else if (type == CompressFormat.PNG) {
+            saveBitmap(bitmap, fileName, callBack, CompressFormat.PNG);
+        }
+    }
+
 
     /**
      * 按高度等比例改变图像大小

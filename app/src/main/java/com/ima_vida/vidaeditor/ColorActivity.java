@@ -3,9 +3,12 @@ package com.ima_vida.vidaeditor;
 import static android.graphics.Color.rgb;
 
 import android.app.Activity;
+import android.content.Intent;
 import android.content.pm.PackageManager;
 import android.graphics.Bitmap;
+import android.graphics.Bitmap.CompressFormat;
 import android.graphics.BitmapFactory;
+import android.net.Uri;
 import android.os.Bundle;
 import android.support.annotation.NonNull;
 import android.support.v4.app.ActivityCompat;
@@ -18,6 +21,7 @@ import android.widget.ImageView;
 import android.widget.SeekBar;
 import android.widget.TextView;
 import android.widget.Toast;
+import java.io.File;
 import java.util.Date;
 
 public class ColorActivity extends AppCompatActivity implements SeekBar.OnSeekBarChangeListener {
@@ -27,6 +31,7 @@ public class ColorActivity extends AppCompatActivity implements SeekBar.OnSeekBa
     private TextView mTvRed;
     private TextView mTvGreen;
     private TextView mTvBlue;
+    private boolean isJPG = true;
     private boolean canSave = true;
     private int red = 0;
     private int green = 211;
@@ -74,23 +79,27 @@ public class ColorActivity extends AppCompatActivity implements SeekBar.OnSeekBa
         }
         canSave = false;
         int color = rgb(red, green, blue);
+        CompressFormat type = isJPG? CompressFormat.JPEG:CompressFormat.PNG;
         Bitmap saveBitmap = ImageUtil.handleBitmapColor(mOriBitmap, color);
         Date date = new Date();
-        ImageUtil.saveBitmap(saveBitmap, "vida_" + date.getTime() + ".png",
+        String fileName = "vida_" + date.getTime() + (isJPG?".jpg":".png");
+        ImageUtil.saveBitmapToGallery(saveBitmap, fileName,
                 new PictureSaveCallBack() {
                     @Override
-                    public void onSaved(final String path) {
+                    public void onSaved(final File file) {
                         runOnUiThread(new Runnable() {
                             @Override
                             public void run() {
-                                Toast.makeText(ColorActivity.this, "图片已成功保存至" + path,
+                                Toast.makeText(ColorActivity.this, "图片已成功保存至" + file.getAbsolutePath(),
                                         Toast.LENGTH_SHORT).show();
+                                sendBroadcast(new Intent(Intent.ACTION_MEDIA_SCANNER_SCAN_FILE,
+                                        Uri.fromFile(file)));
                                 canSave = true;
                             }
                         });
 
                     }
-                });
+                },type);
     }
 
     @Override
@@ -110,6 +119,18 @@ public class ColorActivity extends AppCompatActivity implements SeekBar.OnSeekBa
                 break;
             case R.id.ic_about:
                 new AboutDialog(this).show();
+                break;
+            case R.id.home:
+                finish();
+                break;
+            case R.id.ic_mode:
+                if (isJPG){
+                    isJPG = false;
+                    item.setTitle("PNG");
+                }else {
+                    isJPG = true;
+                    item.setTitle("JPG");
+                }
                 break;
         }
         return true;

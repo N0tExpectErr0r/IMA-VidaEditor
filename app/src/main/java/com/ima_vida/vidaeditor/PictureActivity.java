@@ -4,6 +4,7 @@ import static android.graphics.Color.rgb;
 
 import android.content.Intent;
 import android.graphics.Bitmap;
+import android.graphics.Bitmap.CompressFormat;
 import android.graphics.BitmapFactory;
 import android.net.Uri;
 import android.os.Bundle;
@@ -13,6 +14,7 @@ import android.support.design.widget.FloatingActionButton;
 import android.support.v7.app.ActionBar;
 import android.support.v7.app.AppCompatActivity;
 import android.support.v7.widget.Toolbar;
+import android.util.Log;
 import android.view.Menu;
 import android.view.MenuItem;
 import android.view.View;
@@ -20,6 +22,7 @@ import android.view.View.OnClickListener;
 import android.widget.ImageView;
 
 import android.widget.Toast;
+import java.io.File;
 import java.io.FileNotFoundException;
 import java.util.Date;
 
@@ -29,11 +32,11 @@ public class PictureActivity extends AppCompatActivity{
     public static final int CROP_PHOTO = 2;
     private static final String IMAGE_FILE_LOCATION = "file:///" + Environment.getExternalStorageDirectory().getPath() + "/temp.jpg";
     private Uri imageUri = Uri.parse(IMAGE_FILE_LOCATION);
-
+    private boolean isJPG = true;
     private ImageView mIvVida;
     private FloatingActionButton mFabChoose;
     private boolean canSave = true;
-    Bitmap mBitmap;
+    private Bitmap mBitmap;
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
@@ -81,6 +84,18 @@ public class PictureActivity extends AppCompatActivity{
             case R.id.ic_about:
                 new AboutDialog(this).show();
                 break;
+            case R.id.home:
+                finish();
+                break;
+            case R.id.ic_mode:
+                if (isJPG){
+                    isJPG = false;
+                    item.setTitle("PNG");
+                }else {
+                    isJPG = true;
+                    item.setTitle("JPG");
+                }
+                break;
         }
         return true;
     }
@@ -94,21 +109,25 @@ public class PictureActivity extends AppCompatActivity{
         }
         canSave = false;
         Date date = new Date();
-        ImageUtil.saveBitmap(mBitmap, "vida_" + date.getTime() + ".png",
+        final CompressFormat type = isJPG?CompressFormat.JPEG:CompressFormat.PNG;
+        String fileName = "vida_" + date.getTime() + (isJPG?".jpg":".png");
+        ImageUtil.saveBitmapToGallery(mBitmap, fileName,
             new PictureSaveCallBack() {
                 @Override
-                public void onSaved(final String path) {
+                public void onSaved(final File file) {
                     runOnUiThread(new Runnable() {
                         @Override
                         public void run() {
-                            Toast.makeText(PictureActivity.this, "图片已成功保存至" + path,
+                            Toast.makeText(PictureActivity.this, "图片已成功保存至" + file,
                                     Toast.LENGTH_SHORT).show();
+                            sendBroadcast(new Intent(Intent.ACTION_MEDIA_SCANNER_SCAN_FILE,
+                                    Uri.fromFile(file)));
                             canSave = true;
                         }
                     });
 
                 }
-            });
+            },type);
     }
 
     /**
@@ -174,7 +193,9 @@ public class PictureActivity extends AppCompatActivity{
         assert actionBar != null;
         actionBar.setTitle("蛋蛋底图编辑器");
         actionBar.setSubtitle("请选择图片后点击保存");
-        actionBar.setDisplayHomeAsUpEnabled(true);
+        if (actionBar!=null) {
+            actionBar.setDisplayHomeAsUpEnabled(true);
+        }
     }
 
     /**
